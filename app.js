@@ -1497,6 +1497,24 @@ case 'draw_rectangle':
 
 
 canvas.addEventListener('pointermove', (e) => {
+
+// --- AVUÇ İÇİ REDDİ (SÜREKLİ GÜNCELLEME) ---
+    const currentPointerMove = getPointerInfo(e);
+    
+    // Eğer kalem ekrana değiyorsa VEYA havadan ekranın üzerinde geziniyorsa (hover)
+    if (currentPointerMove.type === 'pen') {
+        isPenActive = true;
+        clearTimeout(penActiveTimer); // Eski sayacı iptal et
+        
+        // Kalem tamamen uzaklaşana kadar bu 1 saniye ASLA bitmez
+        penActiveTimer = setTimeout(() => { isPenActive = false; }, 1000); 
+    } 
+    // Kalem aktifken (veya uzaklaşalı henüz 1 saniye olmamışken) bir el/parmak değerse REDDET
+    else if (currentPointerMove.type === 'touch' && isPenActive) {
+        return; // İşlemi anında iptal et, aşağıdaki kodları hiç okuma!
+    }
+    // -------------------------------------------
+
     // --- YENİ: PARMAK TAKİBİ VE ZOOM ---
     pointers.set(e.pointerId, e); // Her zaman parmağı kaydet
 
