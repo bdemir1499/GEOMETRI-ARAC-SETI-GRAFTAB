@@ -9,6 +9,8 @@ const MIN_SCALE = 0.5;
 const MAX_SCALE = 5.0;
 let initialWidth = 0;
 let initialHeight = 0;
+let isPenActive = false; // Avuç içi reddi için
+let penActiveTimer = null;
 
 
 // Sayfa açıldığında kırmızı butonun yanlışlıkla görünmesini engellemek için:
@@ -37,6 +39,27 @@ function getPointerPos(e) {
     return {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
+    };
+}
+
+
+// --- GRAFİK TABLET SİMÜLATÖRÜ ---
+function getPointerInfo(e) {
+    // TEST BİTİNCE BURAYI false YAPMAYI UNUTMA!
+    const testModuAcik = true; 
+
+    // Eğer test modu açıksa ve fare kullanılıyorsa, onu "Kalem" gibi kandır
+    if (testModuAcik && e.pointerType === 'mouse') {
+        return {
+            type: 'pen',
+            pressure: Math.random() * 0.8 + 0.2 // 0.2 ile 1.0 arası sahte basınç değişimi
+        };
+    }
+    
+    // Gerçek cihaz kullanılıyorsa cihazın kendi verilerini yolla
+    return {
+        type: e.pointerType,
+        pressure: e.pressure || 1 // Cihaz basınç desteklemiyorsa varsayılan 1'dir
     };
 }
 
@@ -275,28 +298,41 @@ function redrawAllStrokes() {
     // (Buradaki translate ve scale satırlarını tamamen sildik. Zemin artık sabit!)
 
     // 3. NESNELERİ ÇİZ (For döngüsü başlıyor)
-    for (const stroke of drawnStrokes) {        
-        // --- KALEM (PEN) ---
+    for (const stroke of drawnStrokes) {
+
+        
+               // --- KALEM (PEN) GRAFİK TABLET DESTEKLİ ---
         if (stroke.type === 'pen') {
-            ctx.beginPath();
             const points = stroke.path;
-            if (points.length < 3) {
-                ctx.moveTo(points[0].x, points[0].y);
-                for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+            
+            if (points.length < 2) {
+                // Sadece tıklandıysa tek bir nokta koy
+                ctx.beginPath();
+                ctx.arc(points[0].x, points[0].y, (stroke.baseWidth * (points[0].p || 1)) / 2, 0, Math.PI * 2);
+                ctx.fillStyle = stroke.color;
+                ctx.fill();
             } else {
-                ctx.moveTo(points[0].x, points[0].y);
-                for (let i = 1; i < points.length - 2; i++) {
-                    const xc = (points[i].x + points[i + 1].x) / 2;
-                    const yc = (points[i].y + points[i + 1].y) / 2;
-                    ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+                // Çizgiyi basınç hassasiyetiyle çiz
+                for (let i = 1; i < points.length; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(points[i - 1].x, points[i - 1].y);
+                    ctx.lineTo(points[i].x, points[i].y);
+                    ctx.strokeStyle = stroke.color;
+                    
+                    // Basıncı genişliğe uygula (En az %20 kalınlık olsun ki çizgi kopmasın)
+                    let currentPressure = points[i].p !== undefined ? points[i].p : 1;
+                    
+                    // Tabletler bazen çok düşük basınç gönderir, alt sınır koyuyoruz
+                    let dynamicWidth = stroke.baseWidth * Math.max(0.2, currentPressure);
+                    
+                    ctx.lineWidth = dynamicWidth;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.stroke();
                 }
-                ctx.quadraticCurveTo(points[points.length-2].x, points[points.length-2].y, points[points.length-1].x, points[points.length-1].y);
             }
-            ctx.strokeStyle = stroke.color;
-            ctx.lineWidth = stroke.width;
-            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-            ctx.stroke();
         }
+
 
        // --- RESİM / PDF VE CANLANDIR (SNAPSHOT) KOPYASI ---
         else if (stroke.type === 'image') {
@@ -1279,6 +1315,22 @@ canvas.addEventListener('pointerdown', (e) => {
     const snapPos = snapTarget || pos;
     currentMousePos = pos; // Mobil için konum bilgisini güncelle
 
+// --- AVUÇ İÇİ REDDİ (PALM REJECTION) KONTROLÜ ---
+    const currentPointer = getPointerInfo(e);
+    
+    if (currentPointer.type === 'pen') {
+        isPenActive = true;
+        clearTimeout(penActiveTimer);
+        // Kalem kalktıktan sonra 1 saniye daha elleri reddetmeye devam et
+        penActiveTimer = setTimeout(() => { isPenActive = false; }, 1000); 
+    } else if (currentPointer.type === 'touch' && isPenActive) {
+        // Kalem kullanılıyorken ekrana el/avuç içi değerse işlemi İPTAL ET
+        console.log("Avuç içi reddedildi.");
+        return; 
+    }
+    // -----------------------------------------------
+
+
     // --- 1. FİZİKSEL ARAÇ KONTROLÜ ---
     const isToolElementClicked = e.target.closest('.ruler-container, .gonye-container, .aciolcer-container, #compass-container');
     if (isToolElementClicked) { 
@@ -1378,8 +1430,19 @@ canvas.addEventListener('pointerdown', (e) => {
     switch (currentTool) {
         case 'pen':
             isDrawing = true; 
-            drawnStrokes.push({ type: 'pen', path: [snapPos], color: currentPenColor, width: currentPenWidth });
+            // YENİ: Kalemin basıncını al
+            const pInfoDown = getPointerInfo(e);
+            const pressureDown = pInfoDown.type === 'pen' ? pInfoDown.pressure : 1;
+            
+            // YENİ: Basınç değerini (p) koordinatla birlikte kaydet
+            drawnStrokes.push({ 
+                type: 'pen', 
+                path: [{x: snapPos.x, y: snapPos.y, p: pressureDown}], 
+                color: currentPenColor, 
+                baseWidth: currentPenWidth 
+            });
             break;
+
         case 'point':
             isDrawing = false; 
             drawnStrokes.push({ type: 'point', x: snapPos.x, y: snapPos.y, label: nextPointChar });
@@ -1741,7 +1804,12 @@ canvas.addEventListener('pointermove', (e) => {
     if (!isDrawing) return;
 
     if (currentTool === 'pen') {
-        drawnStrokes[drawnStrokes.length - 1].path.push(pos);
+        // YENİ: Hareket halindeki basıncı al
+        const pInfoMove = getPointerInfo(e);
+        const pressureMove = pInfoMove.type === 'pen' ? pInfoMove.pressure : 1;
+
+        // YENİ: Yeni noktayı ve o anki basıncı (p) yola ekle
+        drawnStrokes[drawnStrokes.length - 1].path.push({x: pos.x, y: pos.y, p: pressureMove});
         redrawAllStrokes();
     } 
    else if (currentTool === 'eraser') {
