@@ -39,41 +39,49 @@ function getPointerPos(e) {
     let cX = e.clientX;
     let cY = e.clientY;
 
-    // Pardus akıllı tahta uyumluluğu (Eğer standart koordinat boş gelirse touches içine bak)
-    if ((cX === undefined || cX === 0) && e.touches && e.touches.length > 0) {
-        cX = e.touches[0].clientX;
-        cY = e.touches[0].clientY;
-    } else if ((cX === undefined || cX === 0) && e.changedTouches && e.changedTouches.length > 0) {
-        cX = e.changedTouches[0].clientX;
-        cY = e.changedTouches[0].clientY;
+    // Eğer koordinat bozuk (NaN) veya tanımsız (undefined) gelirse Touch verilerinden zorla çek
+    if (cX === undefined || cX === null || isNaN(cX)) {
+        if (e.targetTouches && e.targetTouches.length > 0) {
+            cX = e.targetTouches[0].clientX;
+            cY = e.targetTouches[0].clientY;
+        } else if (e.touches && e.touches.length > 0) {
+            cX = e.touches[0].clientX;
+            cY = e.touches[0].clientY;
+        } else if (e.changedTouches && e.changedTouches.length > 0) {
+            cX = e.changedTouches[0].clientX;
+            cY = e.changedTouches[0].clientY;
+        } else {
+            cX = 0; // Sistemin çökmesini engellemek için son çare
+            cY = 0;
+        }
     }
 
     return {
-        x: cX - rect.left,
-        y: cY - rect.top
+        // Hata durumunda NaN üretmesini engelleyen ekstra güvenlik (|| 0)
+        x: (cX || 0) - rect.left,
+        y: (cY || 0) - rect.top
     };
 }
 
+
 // --- GRAFİK TABLET SİMÜLATÖRÜ ---
 function getPointerInfo(e) {
-    // TEST BİTİNCE BURAYI false YAPMAYI UNUTMA!
-    const testModuAcik = true; 
+    // BURAYI false YAPTIK!
+    const testModuAcik = false; 
 
     // Eğer test modu açıksa ve fare kullanılıyorsa, onu "Kalem" gibi kandır
     if (testModuAcik && e.pointerType === 'mouse') {
         return {
             type: 'pen',
-            pressure: Math.random() * 0.8 + 0.2 // 0.2 ile 1.0 arası sahte basınç değişimi
+            pressure: Math.random() * 0.8 + 0.2
         };
     }
     
-    // Gerçek cihaz kullanılıyorsa cihazın kendi verilerini yolla
     return {
         type: e.pointerType,
-        pressure: e.pressure || 1 // Cihaz basınç desteklemiyorsa varsayılan 1'dir
+        pressure: e.pressure || 1 
     };
 }
-
 // --- KANVAS AYARLARI ---
 
 const canvas = document.getElementById('drawing-canvas');
@@ -1571,7 +1579,8 @@ canvas.addEventListener('pointermove', (e) => {
 
    // 1. GÜVENLİK: Tek parmaklı işlemlerde sadece ana dokunuşu takip et
     // 1. GÜVENLİK (Pardus Yaması): Pardus isPrimary değerini tanımsız (undefined) gönderebilir.
-    if (e.isPrimary === false) return; 
+    // 1. GÜVENLİK (Pardus Yaması 2.0): Sadece ekranda birden fazla parmak varsa ana parmağı dikkate al.
+    if (pointers.size > 1 && e.isPrimary === false) return; 
 
     // KOORDİNATLARI AL VE SİSTEME KAYDET (Canlandır ve diğer araçlar için şart)
     const pos = getPointerPos(e); 
