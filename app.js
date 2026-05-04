@@ -1323,11 +1323,11 @@ if (animateButton) {
 
 canvas.addEventListener('pointerdown', (e) => {
 
-   // 1. Tarayıcıyı sabitle
+    // 1. Tarayıcıyı sabitle
     if (e.cancelable) e.preventDefault();
     // NOT: setPointerCapture komutu Vestel tahtaları kilitlediği için tamamen kaldırıldı.
 
-// --- KRİTİK EKLENTİ: HAYALET PARMAK SIFIRLAYICI ---
+    // --- KRİTİK EKLENTİ: HAYALET PARMAK SIFIRLAYICI ---
     // Eğer dokunmatik ekrandaysak ve ekrana sadece 1 parmak değiyorsa,
     // hafızada kalmış eski görünmez parmakları tamamen temizle!
     if (e.pointerType === 'touch' && e.touches && e.touches.length === 1) {
@@ -1335,7 +1335,23 @@ canvas.addEventListener('pointerdown', (e) => {
         lastDist = 0;
     }
 
-// --- BUNU EKLE: Parmağı ekrana değdiği an kaydet ---
+    // --- PARDUS ÇİFT SİNYAL (HAYALET FARE) ENGELLEYİCİ ---
+    if (e.pointerType === 'touch') {
+        // Gerçek parmak değdiyse, sistemdeki sahte fareleri sil
+        for (let key of pointers.keys()) {
+            if (pointers.get(key).pointerType === 'mouse') pointers.delete(key);
+        }
+    } else if (e.pointerType === 'mouse') {
+        // Fare sinyali geldiyse ama ekranda parmak varsa, fareyi reddet!
+        let hasTouch = false;
+        for (let p of pointers.values()) {
+            if (p.pointerType === 'touch' || p.pointerType === 'pen') hasTouch = true;
+        }
+        if (hasTouch) return; // İşlemi iptal et, hayalet fareyi içeri alma
+    }
+    // ----------------------------------------------------
+
+    // --- BUNU EKLE: Parmağı ekrana değdiği an kaydet ---
     pointers.set(e.pointerId, e); 
     // ------------------------------------------------
 
@@ -1344,7 +1360,7 @@ canvas.addEventListener('pointerdown', (e) => {
     const snapPos = snapTarget || pos;
     currentMousePos = pos; // Mobil için konum bilgisini güncelle
 
-// --- AVUÇ İÇİ REDDİ (PALM REJECTION) KONTROLÜ ---
+    // --- AVUÇ İÇİ REDDİ (PALM REJECTION) KONTROLÜ ---
     const currentPointer = getPointerInfo(e);
     
     if (currentPointer.type === 'pen') {
@@ -1377,7 +1393,7 @@ canvas.addEventListener('pointerdown', (e) => {
         
         if (hit) {
 
-// Seçilen nesneyi en üste taşı (Z-Index mantığı)
+        // Seçilen nesneyi en üste taşı (Z-Index mantığı)
         drawnStrokes = drawnStrokes.filter(s => s !== hit.item);
         drawnStrokes.push(hit.item);
         window.drawnStrokes = drawnStrokes;
@@ -1406,7 +1422,7 @@ canvas.addEventListener('pointerdown', (e) => {
             } else if (hit.pointKey === 'rotate' || hit.pointKey === 'resize' || hit.pointKey === 'image_resize') {
                 originalStartPos = { radius: hit.item.radius, rotation: hit.item.rotation };
 
-// --- TABLET İÇİN KRİTİK EKLEME ---
+                // --- TABLET İÇİN KRİTİK EKLEME ---
                 if (selectedItem.type === 'rectangle') {
                     initialWidth = selectedItem.width;
                     initialHeight = selectedItem.height;
@@ -1494,7 +1510,7 @@ canvas.addEventListener('pointerdown', (e) => {
             if (!isDrawingRay) { isDrawingRay = true; lineStartPoint = pos; }
             break;
 
-case 'draw_rectangle':
+        case 'draw_rectangle':
             // Şartı (!isDrawingRectangle) kaldırıyoruz; direkt başlatıyoruz.
             isDrawingRectangle = true; 
             rectStartPoint = pos; 
@@ -1524,7 +1540,6 @@ case 'draw_rectangle':
     }
 }, { passive: false });
 
-
 canvas.addEventListener('pointermove', (e) => {
 
 // PARDUS KORUMASI: Sürükleme sırasında tarayıcının araya girmesini kesin engelle
@@ -1545,7 +1560,20 @@ canvas.addEventListener('pointermove', (e) => {
     else if (currentPointerMove.type === 'touch' && isPenActive) {
         return; // İşlemi anında iptal et, aşağıdaki kodları hiç okuma!
     }
+
     // -------------------------------------------
+
+// --- PARDUS ÇİFT SİNYAL ENGELLEYİCİ ---
+    if (e.pointerType === 'mouse') {
+        let hasTouch = false;
+        for (let p of pointers.values()) {
+            if (p.pointerType === 'touch' || p.pointerType === 'pen') hasTouch = true;
+        }
+        if (hasTouch) return; // Hayalet farenin hareket etmesini engelle!
+    }
+
+    // --------------------------------------
+
 
     // --- YENİ: PARMAK TAKİBİ VE ZOOM ---
     pointers.set(e.pointerId, e); // Her zaman parmağı kaydet
@@ -1980,6 +2008,17 @@ canvas.addEventListener('pointerup', (e) => {
     // 1. Tarayıcı kilitlerini kaldır (Pardus Korumalı)
    
     if (e.pointerType === 'touch' && e.cancelable) e.preventDefault();
+
+// --- PARDUS ÇİFT SİNYAL ENGELLEYİCİ ---
+    if (e.pointerType === 'mouse') {
+        let hasTouch = false;
+        for (let p of pointers.values()) {
+            if (p.pointerType === 'touch' || p.pointerType === 'pen') hasTouch = true;
+        }
+        if (hasTouch) return; // Hayalet fare kalkış yapmasın
+    }
+    // --------------------------------------
+
 
 // --- BUNLARI EKLE: Kalkan parmağı sil ve zoom'u sıfırla ---
     pointers.delete(e.pointerId); 
