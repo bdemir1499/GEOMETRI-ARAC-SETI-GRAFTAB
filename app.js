@@ -82,10 +82,19 @@ function getPointerInfo(e) {
         pressure: e.pressure || 1 
     };
 }
+
+
 // --- KANVAS AYARLARI ---
 
 const canvas = document.getElementById('drawing-canvas');
 const ctx = canvas.getContext('2d');
+
+// PARDUS KESİN ÇÖZÜM: Tarayıcının kaydırma ve yakınlaştırma yapmasını yasakla
+canvas.style.touchAction = 'none';
+canvas.style.userSelect = 'none';
+document.body.style.overscrollBehavior = 'none';
+
+
 // --- RESİM YÜKLEME DEĞİŞKENLERİ ---
 let backgroundImage = null; // Yüklenen resmi tutacak değişken
 const uploadButton = document.getElementById('btn-upload');
@@ -1313,9 +1322,10 @@ if (animateButton) {
 // --- MOUSE OLAYLARI ---
 
 canvas.addEventListener('pointerdown', (e) => {
-   // 1. Tarayıcıyı sabitle (Pardus Korumalı)
-    if (e.pointerType === 'touch') e.preventDefault();
-    try { if (e.pointerId) canvas.setPointerCapture(e.pointerId); } catch(err) {}
+
+   // 1. Tarayıcıyı sabitle
+    if (e.cancelable) e.preventDefault();
+    // NOT: setPointerCapture komutu Vestel tahtaları kilitlediği için tamamen kaldırıldı.
 
 // --- KRİTİK EKLENTİ: HAYALET PARMAK SIFIRLAYICI ---
     // Eğer dokunmatik ekrandaysak ve ekrana sadece 1 parmak değiyorsa,
@@ -1516,6 +1526,9 @@ case 'draw_rectangle':
 
 
 canvas.addEventListener('pointermove', (e) => {
+
+// PARDUS KORUMASI: Sürükleme sırasında tarayıcının araya girmesini kesin engelle
+    if (e.cancelable) e.preventDefault();
 
 // --- AVUÇ İÇİ REDDİ (SÜREKLİ GÜNCELLEME) ---
     const currentPointerMove = getPointerInfo(e);
@@ -1965,7 +1978,7 @@ canvas.addEventListener('pointermove', (e) => {
 
 canvas.addEventListener('pointerup', (e) => {
     // 1. Tarayıcı kilitlerini kaldır (Pardus Korumalı)
-    try { if (e.pointerId) canvas.releasePointerCapture(e.pointerId); } catch(err) {}
+   
     if (e.pointerType === 'touch' && e.cancelable) e.preventDefault();
 
 // --- BUNLARI EKLE: Kalkan parmağı sil ve zoom'u sıfırla ---
