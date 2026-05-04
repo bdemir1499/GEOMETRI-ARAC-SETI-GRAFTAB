@@ -36,12 +36,23 @@ function getGlobalCoordinates(e) {
 
 function getPointerPos(e) {
     const rect = canvas.getBoundingClientRect();
+    let cX = e.clientX;
+    let cY = e.clientY;
+
+    // Pardus akıllı tahta uyumluluğu (Eğer standart koordinat boş gelirse touches içine bak)
+    if ((cX === undefined || cX === 0) && e.touches && e.touches.length > 0) {
+        cX = e.touches[0].clientX;
+        cY = e.touches[0].clientY;
+    } else if ((cX === undefined || cX === 0) && e.changedTouches && e.changedTouches.length > 0) {
+        cX = e.changedTouches[0].clientX;
+        cY = e.changedTouches[0].clientY;
+    }
+
     return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
+        x: cX - rect.left,
+        y: cY - rect.top
     };
 }
-
 
 // --- GRAFİK TABLET SİMÜLATÖRÜ ---
 function getPointerInfo(e) {
@@ -1294,9 +1305,9 @@ if (animateButton) {
 // --- MOUSE OLAYLARI ---
 
 canvas.addEventListener('pointerdown', (e) => {
-    // 1. Tarayıcıyı sabitle
+   // 1. Tarayıcıyı sabitle (Pardus Korumalı)
     if (e.pointerType === 'touch') e.preventDefault();
-    canvas.setPointerCapture(e.pointerId);
+    try { if (e.pointerId) canvas.setPointerCapture(e.pointerId); } catch(err) {}
 
 // --- KRİTİK EKLENTİ: HAYALET PARMAK SIFIRLAYICI ---
     // Eğer dokunmatik ekrandaysak ve ekrana sadece 1 parmak değiyorsa,
@@ -1519,22 +1530,33 @@ canvas.addEventListener('pointermove', (e) => {
     pointers.set(e.pointerId, e); // Her zaman parmağı kaydet
 
    // --- TABLET: İKİ PARMAK ZOOM (SADECE RESİM/PDF BÜYÜR) ---
-    if (pointers.size === 2) {
-        const p = Array.from(pointers.values());
-        const currentDist = Math.hypot(p[0].clientX - p[1].clientX, p[0].clientY - p[1].clientY);
+    // --- PARDUS VE TABLET: İKİ PARMAK ZOOM (SADECE RESİM/PDF BÜYÜR) ---
+    if (pointers.size === 2 || (e.touches && e.touches.length === 2)) {
+        let p1x, p1y, p2x, p2y;
+        
+        // Pardus gibi parmakları e.touches içine paketleyen sistemler için
+        if (e.touches && e.touches.length === 2) {
+            p1x = e.touches[0].clientX; p1y = e.touches[0].clientY;
+            p2x = e.touches[1].clientX; p2y = e.touches[1].clientY;
+        } else {
+            // Standart modern tablet ve PC'ler için
+            const p = Array.from(pointers.values());
+            p1x = p[0].clientX; p1y = p[0].clientY;
+            p2x = p[1].clientX; p2y = p[1].clientY;
+        }
+
+        const currentDist = Math.hypot(p1x - p2x, p1y - p2y);
 
         if (lastDist > 0) {
             const delta = currentDist - lastDist;
             const zoomSpeed = 0.003; 
             const zoomStep = 1 + (delta * zoomSpeed);
 
-            // SADECE ARKA PLANI (PDF/RESİM) BUL VE BÜYÜT/KÜÇÜLT
             const bgStrokes = drawnStrokes.filter(s => s.isBackground === true);
             if (bgStrokes.length > 0) {
                 bgStrokes.forEach(bg => {
                     const newW = bg.width * zoomStep;
                     const newH = bg.height * zoomStep;
-                    // Merkezden büyütmek için x ve y koordinatlarını da kaydır
                     bg.x = bg.x - (newW - bg.width) / 2;
                     bg.y = bg.y - (newH - bg.height) / 2;
                     bg.width = newW;
@@ -1548,7 +1570,8 @@ canvas.addEventListener('pointermove', (e) => {
     }
 
    // 1. GÜVENLİK: Tek parmaklı işlemlerde sadece ana dokunuşu takip et
-    if (!e.isPrimary) return; 
+    // 1. GÜVENLİK (Pardus Yaması): Pardus isPrimary değerini tanımsız (undefined) gönderebilir.
+    if (e.isPrimary === false) return; 
 
     // KOORDİNATLARI AL VE SİSTEME KAYDET (Canlandır ve diğer araçlar için şart)
     const pos = getPointerPos(e); 
@@ -1932,8 +1955,8 @@ canvas.addEventListener('pointermove', (e) => {
 
 
 canvas.addEventListener('pointerup', (e) => {
-    // 1. Tarayıcı kilitlerini kaldır ve standart hareketleri engelle
-    canvas.releasePointerCapture(e.pointerId);
+    // 1. Tarayıcı kilitlerini kaldır (Pardus Korumalı)
+    try { if (e.pointerId) canvas.releasePointerCapture(e.pointerId); } catch(err) {}
     if (e.pointerType === 'touch' && e.cancelable) e.preventDefault();
 
 // --- BUNLARI EKLE: Kalkan parmağı sil ve zoom'u sıfırla ---
