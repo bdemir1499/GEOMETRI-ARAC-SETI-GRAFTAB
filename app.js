@@ -346,10 +346,8 @@ function redrawAllStrokes() {
     ctx.setTransform(1, 0, 0, 1, 0, 0); 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // --- TAM BURAYA EKLE (GÜVENLİK KONTROLÜ) ---
-    // Liste yoksa veya boşsa döngüye girmeden fonksiyondan çık
-    if (!drawnStrokes || drawnStrokes.length === 0) return; 
-    // ------------------------------------------
+    // SADECE BU SATIRI EKLE:
+    if (!window.drawnStrokes || window.drawnStrokes.length === 0) return;
 
     ctx.save();
     // (Buradaki translate ve scale satırlarını tamamen sildik. Zemin artık sabit!)
@@ -359,30 +357,30 @@ function redrawAllStrokes() {
         
         // --- KALEM (PEN) GRAFİK TABLET DESTEKLİ ---
         if (stroke.type === 'pen') {
-            const points = stroke.path;[cite: 1]
+            const points = stroke.path;
             
-            if (points.length < 2) {[cite: 1]
+            if (points.length < 2) {
                 // Sadece tıklandıysa tek bir nokta koy
-                ctx.beginPath();[cite: 1]
-                ctx.arc(points[0].x, points[0].y, (stroke.baseWidth * (points[0].p || 1)) / 2, 0, Math.PI * 2);[cite: 1]
-                ctx.fillStyle = stroke.color;[cite: 1]
-                ctx.fill();[cite: 1]
-            } else {[cite: 1]
+                ctx.beginPath();
+                ctx.arc(points[0].x, points[0].y, (stroke.baseWidth * (points[0].p || 1)) / 2, 0, Math.PI * 2);
+                ctx.fillStyle = stroke.color;
+                ctx.fill();
+            } else {
                 // Çizgiyi basınç hassasiyetiyle çiz
-                for (let i = 1; i < points.length; i++) {[cite: 1]
-                    ctx.beginPath();[cite: 1]
-                    ctx.moveTo(points[i - 1].x, points[i - 1].y);[cite: 1]
-                    ctx.lineTo(points[i].x, points[i].y);[cite: 1]
-                    ctx.strokeStyle = stroke.color;[cite: 1]
+                for (let i = 1; i < points.length; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(points[i - 1].x, points[i - 1].y);
+                    ctx.lineTo(points[i].x, points[i].y);
+                    ctx.strokeStyle = stroke.color;
                     
                     // Basıncı genişliğe uygula (En az %20 kalınlık olsun)
-                    let currentPressure = points[i].p !== undefined ? points[i].p : 1;[cite: 1]
-                    let dynamicWidth = stroke.baseWidth * Math.max(0.2, currentPressure);[cite: 1]
+                    let currentPressure = points[i].p !== undefined ? points[i].p : 1;
+                    let dynamicWidth = stroke.baseWidth * Math.max(0.2, currentPressure);
                     
-                    ctx.lineWidth = dynamicWidth;[cite: 1]
-                    ctx.lineCap = 'round';[cite: 1]
-                    ctx.lineJoin = 'round';[cite: 1]
-                    ctx.stroke();[cite: 1]
+                    ctx.lineWidth = dynamicWidth;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.stroke();
                 }
             }
         }
