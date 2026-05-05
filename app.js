@@ -285,11 +285,6 @@ function findSnapPoint(pos) {
     return null; 
 }
 
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    redrawAllStrokes();
-}
 
 function getEventPosition(e) {
     if (e.touches && e.touches.length > 0) {
@@ -2605,14 +2600,14 @@ function resizeCanvas() {
     const newWidth = window.innerWidth;
     const newHeight = window.innerHeight;
 
-    // canvas.height = newHeight; satırının hemen altına ekle
-setupCanvasResolution();
-
     // Gerçekten ekran döndüyse veya boyut değiştiyse güncelle
     lastWindowWidth = newWidth;
     canvas.width = newWidth;
     canvas.height = newHeight;
     redrawAllStrokes();
+
+// canvas.height = newHeight; satırının hemen altına ekle
+setupCanvasResolution();
 }
 
 window.addEventListener('load', resizeCanvas);
