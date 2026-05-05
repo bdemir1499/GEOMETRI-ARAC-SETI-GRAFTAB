@@ -90,6 +90,25 @@ function getPointerInfo(e) {
 const canvas = document.getElementById('drawing-canvas');
 const ctx = canvas.getContext('2d');
 
+function setupCanvasResolution() {
+    const rect = canvas.getBoundingClientRect();
+    
+    // Kanvasın iç piksel sayısını, ekrandaki gerçek boyutuyla birebir eşitle
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    
+    // Eğer çizimlerin varsa, çözünürlük değişince silinmemesi için yeniden çizdir
+    if (typeof redrawAllStrokes === 'function') {
+        redrawAllStrokes();
+    }
+}
+
+// 1. Uygulama ilk açıldığında çalıştır
+setupCanvasResolution();
+
+// 2. Ekran boyutu her değiştiğinde (yükle butonu sonrası veya yan çevirince) çalıştır
+window.addEventListener('resize', setupCanvasResolution);
+
 // PARDUS KESİN ÇÖZÜM: Tarayıcının kaydırma ve yakınlaştırma yapmasını yasakla
 canvas.style.touchAction = 'none';
 canvas.style.userSelect = 'none';
