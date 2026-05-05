@@ -889,6 +889,10 @@ function setActiveTool(tool) {
     body.classList.remove('cursor-eraser');
     body.classList.remove('cursor-snapshot');
 
+// --- BU SATIRI EKLE ---
+    if (eraserPreview) eraserPreview.style.display = 'none'; 
+    // ----------------------
+
     // Menüleri gizle
     if (polygonOptions) { polygonOptions.classList.add('hidden'); polygonOptions.style.display = ''; }
     
