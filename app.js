@@ -987,9 +987,15 @@ function setActiveTool(tool) {
         aciolcerButton.classList.add('active');
         if (window.AciolcerTool) window.AciolcerTool.show();
     } else if (tool === 'pergel') {
-        pergelButton.classList.add('active');
-        if (window.PergelTool) window.PergelTool.show();
-    } else if (tool.startsWith('draw_polygon_')) { 
+    pergelButton.classList.add('active');
+    if (window.PergelTool) {
+        window.PergelTool.show(); // Pergelin görünür olmasını sağlar
+        // Pergelin en üstte görünmesi için:
+        if (window.bringToolToFront) {
+            window.bringToolToFront(window.PergelTool.pergelElement);
+        }
+    }
+} else if (tool.startsWith('draw_polygon_')) { 
         polygonButton.classList.add('active');
     } else if (tool === 'move') {
         moveButton.classList.add('active');
@@ -1014,7 +1020,9 @@ eraserButton.addEventListener('click', () => setActiveTool(currentTool === 'eras
 rulerButton.addEventListener('click', () => { if (window.RulerTool) { window.RulerTool.toggle(); rulerButton.classList.toggle('active', !window.RulerTool.rulerElement.style.display); } });
 gonyeButton.addEventListener('click', () => { if (window.GonyeTool) { window.GonyeTool.toggle(); gonyeButton.classList.toggle('active', !window.GonyeTool.gonyeElement.style.display); } });
 aciolcerButton.addEventListener('click', () => { if (window.AciolcerTool) { window.AciolcerTool.toggle(); aciolcerButton.classList.toggle('active', !window.AciolcerTool.aciolcerElement.style.display); } });
-pergelButton.addEventListener('click', () => { if (window.PergelTool) { window.PergelTool.toggle(); pergelButton.classList.toggle('active', !window.PergelTool.pergelElement.classList.contains('hidden')); } });
+pergelButton.addEventListener('click', () => {
+    setActiveTool(currentTool === 'pergel' ? 'none' : 'pergel');
+});
 undoButton.addEventListener('click', undoLastStroke);
 clearAllButton.addEventListener('click', clearAllStrokes);
 moveButton.addEventListener('click', () => setActiveTool(currentTool === 'move' ? 'none' : 'move'));
