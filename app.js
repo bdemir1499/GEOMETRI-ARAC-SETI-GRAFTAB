@@ -2605,11 +2605,8 @@ function resizeCanvas() {
     const newWidth = window.innerWidth;
     const newHeight = window.innerHeight;
 
-    // Eğer genişlik değişmediyse (Sadece adres çubuğu inip kalktıysa) işlem yapma!
-    // Bu sayede çizim sırasında ekranın titremesini/zıplamasını engelleriz.
-    if (newWidth === lastWindowWidth && Math.abs(newHeight - canvas.height) < 150) {
-        return; 
-    }
+    // canvas.height = newHeight; satırının hemen altına ekle
+setupCanvasResolution();
 
     // Gerçekten ekran döndüyse veya boyut değiştiyse güncelle
     lastWindowWidth = newWidth;
@@ -2950,3 +2947,7 @@ function olusturYuzenKopya(imgSrc, startX, startY, width, height) {
     }, 200);
 }
 
+// Dosyanın en altına ekle
+window.addEventListener('load', () => {
+    setTimeout(setupCanvasResolution, 500);
+});
