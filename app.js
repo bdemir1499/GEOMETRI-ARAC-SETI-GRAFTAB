@@ -39,7 +39,7 @@ function getPointerPos(e) {
     let cX = e.clientX;
     let cY = e.clientY;
 
-    // Eğer koordinat bozuk (NaN) veya tanımsız (undefined) gelirse Touch verilerinden zorla çek
+    // --- SENİN MEVCUT HATA KORUMA MANTIĞIN (DOKUNULMADI) ---
     if (cX === undefined || cX === null || isNaN(cX)) {
         if (e.targetTouches && e.targetTouches.length > 0) {
             cX = e.targetTouches[0].clientX;
@@ -51,18 +51,19 @@ function getPointerPos(e) {
             cX = e.changedTouches[0].clientX;
             cY = e.changedTouches[0].clientY;
         } else {
-            cX = 0; // Sistemin çökmesini engellemek için son çare
+            cX = 0; 
             cY = 0;
         }
     }
 
+    // --- YENİ DÜZELTİLMİŞ HESAPLAMA (ÖZELLİK KAYBI YOK) ---
     return {
-        // Hata durumunda NaN üretmesini engelleyen ekstra güvenlik (|| 0)
-        x: (cX || 0) - rect.left,
-        y: (cY || 0) - rect.top
+        // (cX - rect.left) ile ham koordinatı bulup, 
+        // kanvasın iç çözünürlüğü ile ekrandaki boyutu arasındaki orana (canvas.width / rect.width) çarpıyoruz.
+        x: ((cX || 0) - rect.left) * (canvas.width / rect.width),
+        y: ((cY || 0) - rect.top) * (canvas.height / rect.height)
     };
 }
-
 
 // --- GRAFİK TABLET SİMÜLATÖRÜ ---
 function getPointerInfo(e) {
