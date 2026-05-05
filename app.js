@@ -1,4 +1,8 @@
+let drawnStrokes = [];
+window.drawnStrokes = drawnStrokes;
+let isDrawing = false;
 let isDrawingRectangle = false;
+let isDrawingPolygon = false;
 let rectStartPoint = null;
 let globalScale = 1;
 let lastDist = 0;
@@ -141,7 +145,7 @@ window.audio_eraser = silentAudio;
 
 
 // --- DEĞİŞKENLER ---
-let isDrawing = false; 
+ 
 let snapshotStart = null; 
 const animateButton = document.getElementById('btn-animate');
 let currentTool = 'none'; 
@@ -155,8 +159,8 @@ window.currentLineColor = '#FFFFFF'; // Varsayılan Renk: BEYAZ
 const SNAP_THRESHOLD = 10;
 let returnToSnapshot = false; // İşlem bitince geri dönülecek mi? 
 
-let drawnStrokes = []; 
-window.drawnStrokes = drawnStrokes;
+ 
+
 let nextPointChar = 'A'; 
 window.nextPointChar = nextPointChar;
 
@@ -342,45 +346,46 @@ function redrawAllStrokes() {
     ctx.setTransform(1, 0, 0, 1, 0, 0); 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // --- TAM BURAYA EKLE (GÜVENLİK KONTROLÜ) ---
+    // Liste yoksa veya boşsa döngüye girmeden fonksiyondan çık
+    if (!drawnStrokes || drawnStrokes.length === 0) return; 
+    // ------------------------------------------
+
     ctx.save();
     // (Buradaki translate ve scale satırlarını tamamen sildik. Zemin artık sabit!)
 
     // 3. NESNELERİ ÇİZ (For döngüsü başlıyor)
     for (const stroke of drawnStrokes) {
-
         
-               // --- KALEM (PEN) GRAFİK TABLET DESTEKLİ ---
+        // --- KALEM (PEN) GRAFİK TABLET DESTEKLİ ---
         if (stroke.type === 'pen') {
-            const points = stroke.path;
+            const points = stroke.path;[cite: 1]
             
-            if (points.length < 2) {
+            if (points.length < 2) {[cite: 1]
                 // Sadece tıklandıysa tek bir nokta koy
-                ctx.beginPath();
-                ctx.arc(points[0].x, points[0].y, (stroke.baseWidth * (points[0].p || 1)) / 2, 0, Math.PI * 2);
-                ctx.fillStyle = stroke.color;
-                ctx.fill();
-            } else {
+                ctx.beginPath();[cite: 1]
+                ctx.arc(points[0].x, points[0].y, (stroke.baseWidth * (points[0].p || 1)) / 2, 0, Math.PI * 2);[cite: 1]
+                ctx.fillStyle = stroke.color;[cite: 1]
+                ctx.fill();[cite: 1]
+            } else {[cite: 1]
                 // Çizgiyi basınç hassasiyetiyle çiz
-                for (let i = 1; i < points.length; i++) {
-                    ctx.beginPath();
-                    ctx.moveTo(points[i - 1].x, points[i - 1].y);
-                    ctx.lineTo(points[i].x, points[i].y);
-                    ctx.strokeStyle = stroke.color;
+                for (let i = 1; i < points.length; i++) {[cite: 1]
+                    ctx.beginPath();[cite: 1]
+                    ctx.moveTo(points[i - 1].x, points[i - 1].y);[cite: 1]
+                    ctx.lineTo(points[i].x, points[i].y);[cite: 1]
+                    ctx.strokeStyle = stroke.color;[cite: 1]
                     
-                    // Basıncı genişliğe uygula (En az %20 kalınlık olsun ki çizgi kopmasın)
-                    let currentPressure = points[i].p !== undefined ? points[i].p : 1;
+                    // Basıncı genişliğe uygula (En az %20 kalınlık olsun)
+                    let currentPressure = points[i].p !== undefined ? points[i].p : 1;[cite: 1]
+                    let dynamicWidth = stroke.baseWidth * Math.max(0.2, currentPressure);[cite: 1]
                     
-                    // Tabletler bazen çok düşük basınç gönderir, alt sınır koyuyoruz
-                    let dynamicWidth = stroke.baseWidth * Math.max(0.2, currentPressure);
-                    
-                    ctx.lineWidth = dynamicWidth;
-                    ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';
-                    ctx.stroke();
+                    ctx.lineWidth = dynamicWidth;[cite: 1]
+                    ctx.lineCap = 'round';[cite: 1]
+                    ctx.lineJoin = 'round';[cite: 1]
+                    ctx.stroke();[cite: 1]
                 }
             }
         }
-
 
        // --- RESİM / PDF VE CANLANDIR (SNAPSHOT) KOPYASI ---
         else if (stroke.type === 'image') {
