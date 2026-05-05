@@ -976,6 +976,7 @@ function setActiveTool(tool) {
         rayButton.classList.add('active');
         lineOptions.classList.remove('hidden');
     } 
+
     // --- DİĞER ARAÇLAR ---
     else if (tool === 'ruler') {
         rulerButton.classList.add('active');
