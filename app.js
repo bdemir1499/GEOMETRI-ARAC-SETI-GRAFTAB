@@ -643,7 +643,7 @@ else if (stroke.type === 'rectangle') {
                 const r_label = `r = ${r_cm_str} cm`;
                 drawLabel(r_label, {x: centerPos.x + (r_px / 2) - 20, y: centerPos.y - 10}, '#FFFF00'); 
                 let labelY = centerPos.y - 20;
-                const labelX = centerPos.x + r_px + 10; 
+                const labelX = centerPos.x + r_px + 30; 
                 drawLabel(`Ç = 2 . π . r`, {x: labelX, y: labelY}, '#FFFF00'); labelY += 20; 
                 drawLabel(`= 2 . ${PI} . ${r_cm_str} = ${circ_str} cm`, {x: labelX, y: labelY}, '#FFFF00'); labelY += 25; 
                 drawLabel(`A = π . r²`, {x: labelX, y: labelY}, '#FFFF00'); labelY += 20;
